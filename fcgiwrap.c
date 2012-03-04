@@ -383,6 +383,8 @@ char *get_cgi_filename() /* and fixup environment */
 	int rf_len;
 	char *pathinfo = NULL;
 
+	char *errormessage = NULL;
+
 	if ((p = getenv("SCRIPT_FILENAME"))) {
 		return strdup(p);
 	}
@@ -392,6 +394,7 @@ char *get_cgi_filename() /* and fixup environment */
 		docrootlen = strlen(p);
 		buflen += docrootlen;
 	} else {
+		errormessage = "DOCUMENT_ROOT not set!";
 		goto err;
 	}
 
@@ -399,6 +402,7 @@ char *get_cgi_filename() /* and fixup environment */
 		buflen += strlen(p);
 		scriptname = p;
 	} else {
+		errormessage = "SCRIPT_NAME not set!";
 		goto err;
 	}
 
@@ -413,8 +417,10 @@ char *get_cgi_filename() /* and fixup environment */
 	}
 
 	while(1) {
+		fprintf(stderr, "Attempting path: %s\n", buf);
 		switch(check_file_perms(buf)) {
 			case -EACCES:
+				errormessage = "Cannot access path!";
 				goto err;
 			case 0:
 				rf_len = strlen(buf);
@@ -436,6 +442,9 @@ char *get_cgi_filename() /* and fixup environment */
 err:
 	free(pathinfo);
 	free(buf);
+	if(errormessage) {
+	  fprintf(stderr, "%s\n", errormessage);
+	}
 	return NULL;
 }
 
